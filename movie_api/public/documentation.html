@@ -6,7 +6,31 @@
   <title>Movie API Documentation</title>
 </head>
 <body>
-  <h1>Movie API</h1>
-  <p>This API provides movie-related data, including information on titles, directors, genres, and more. Developers can use this API to access a wide range of movie data through simple HTTP requests.</p>
+  <h1>Movie API Documentation</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Description</th>
+        <th>Response</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>/movies</td>
+        <td>GET</td>
+        <td>Returns a list of all movies.</td>
+        <td>Array of movie objects</td>
+      </tr>
+      <tr>
+        <td>/movies/:title</td>
+        <td>GET</td>
+        <td>Returns data about a single movie by title.</td>
+        <td>Movie object</td>
+      </tr>
+      <!-- Add additional endpoints here -->
+    </tbody>
+  </table>
 </body>
 </html>
