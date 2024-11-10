@@ -1,94 +1,129 @@
-const express = require('express'),
-  bodyParser = require('body-parser'),
-  uuid = require('uuid');
-
+const express = require('express');
+const mongoose = require('mongoose');
+const { Movie, User } = require('./models'); // Import models from models.js
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-app.use(bodyParser.json()); // Parse JSON bodies
-app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(express.json()); // Middleware to parse JSON requests
 
-// In-memory arrays for sample data
-const movies = [
-  { title: 'Inception', description: 'Dream invasion', genre: 'Sci-Fi', director: 'Christopher Nolan', imageUrl: 'https://inception.jpg', featured: true },
-  { title: 'The Matrix', description: 'Reality vs simulation', genre: 'Sci-Fi', director: 'Lana Wachowski', imageUrl: 'https://matrix.jpg', featured: true },
-];
-const genres = { 'Sci-Fi': { description: 'Science Fiction' } };
-const directors = { 'Christopher Nolan': { bio: 'British-American director', birthYear: 1970, deathYear: null } };
-const users = [
-  {
-    username: "example123",
-    email: "example123@example.com",
-    favorites: ["Inception", "The Matrix"] // Movies the user has added to favorites
-  }
-];
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/MYFLIXDB', { 
+  useNewUrlParser: true, 
+  useUnifiedTopology: true 
+})
+.then(() => console.log("MongoDB connected"))
+.catch(error => console.log(error));
 
 // Routes
 
-//READ
-app.get('/movies', (req, res) => {
-  res.json(movies);
-});
-
-//READ
-app.get('/movies/:title', (req, res) => {
-  const movie = movies.find(m => m.title.toLowerCase() === req.params.title.toLowerCase());
-  movie ? res.json(movie) : res.status(404).send('Movie not found');
-});
-
-//READ
-app.get('/genres/:name', (req, res) => {
-  const genre = genres[req.params.name];
-  genre ? res.json(genre) : res.status(404).send('Genre not found');
-});
-
-//READ
-app.get('/directors/:name', (req, res) => {
-  const director = directors[req.params.name];
-  director ? res.json(director) : res.status(404).send('Director not found');
-});
-
-// CREATE - Register a new user
-app.post('/users', (req, res) => {
-  const newUser = req.body;
-
-  if (newUser.name) {
-    newUser.id = uuidv4(); // Assign a unique ID to each user
-    users.push(newUser);
-    res.status(201).json(newUser);
-  } else {
-    res.status(400).send('Users need names');
+// 1. Get list of all movies
+app.get('/movies', async (req, res) => {
+  try {
+    const movies = await Movie.find();
+    res.json(movies);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
   }
 });
 
-// READ - Get all users
-app.get('/users', (req, res) => {
-  res.json(users);
-});
-
-// UPDATE - Update user info by ID
-app.put('/users/:id', (req, res) => {
-  const user = users.find(u => u.id === req.params.id);
-  if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    res.send(`User with ID ${req.params.id} updated`);
-  } else {
-    res.status(404).send('User not found');
+// 2. Get details of a single movie by title
+app.get('/movies/:title', async (req, res) => {
+  try {
+    const movie = await Movie.findOne({ title: req.params.title });
+    res.json(movie);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
   }
 });
 
-// DELETE - Deregister a user by ID
-app.delete('/users/:id', (req, res) => {
-  const userIndex = users.findIndex(u => u.id === req.params.id);
-  if (userIndex !== -1) {
-    users.splice(userIndex, 1);
-    res.send(`User with ID ${req.params.id} deregistered`);
-  } else {
-    res.status(404).send('User not found');
+// 3. Get details of a genre by name
+app.get('/genres/:name', async (req, res) => {
+  try {
+    const genre = await Movie.findOne({ 'genre.name': req.params.name }, 'genre');
+    res.json(genre.genre);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
   }
 });
 
-const port = 8080;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// 4. Get details of a director by name
+app.get('/directors/:name', async (req, res) => {
+  try {
+    const director = await Movie.findOne({ 'director.name': req.params.name }, 'director');
+    res.json(director.director);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// 5. Register a new user
+app.post('/users', async (req, res) => {
+  try {
+    const newUser = await User.create({
+      username: req.body.username,
+      password: req.body.password,
+      email: req.body.email,
+      birthday: new Date(req.body.birthday)
+    });
+    res.json(newUser);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// 6. Update user info by username
+app.put('/users/:username', async (req, res) => {
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $set: req.body },
+      { new: true }
+    );
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// 7. Add a movie to a user's favorites
+app.post('/users/:username/movies/:movieID', async (req, res) => {
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $push: { favoriteMovies: req.params.movieID } },
+      { new: true }
+    );
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// 8. Remove a movie from a user's favorites
+app.delete('/users/:username/movies/:movieID', async (req, res) => {
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { username: req.params.username },
+      { $pull: { favoriteMovies: req.params.movieID } },
+      { new: true }
+    );
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// 9. Deregister a user by username
+app.delete('/users/:username', async (req, res) => {
+  try {
+    const deletedUser = await User.findOneAndRemove({ username: req.params.username });
+    res.json(deletedUser);
+  } catch (error) {
+    res.status(500).send('Error: ' + error);
+  }
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

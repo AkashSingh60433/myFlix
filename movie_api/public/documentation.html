@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Movie API Documentation</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    h1 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #f4f4f4; }
+  </style>
 </head>
 <body>
   <h1>Movie API Documentation</h1>
@@ -17,6 +24,7 @@
       </tr>
     </thead>
     <tbody>
+      <!-- Movies Endpoints -->
       <tr>
         <td>/movies</td>
         <td>GET</td>
@@ -29,8 +37,93 @@
         <td>Returns data about a single movie by title.</td>
         <td>Movie object</td>
       </tr>
-      <!-- Add additional endpoints here -->
+      <tr>
+        <td>/genres/:name</td>
+        <td>GET</td>
+        <td>Returns data about a genre by name.</td>
+        <td>Genre object</td>
+      </tr>
+      <tr>
+        <td>/directors/:name</td>
+        <td>GET</td>
+        <td>Returns data about a director by name.</td>
+        <td>Director object</td>
+      </tr>
+
+      <!-- Users Endpoints -->
+      <tr>
+        <td>/users</td>
+        <td>POST</td>
+        <td>Registers a new user.</td>
+        <td>Newly created user object</td>
+      </tr>
+      <tr>
+        <td>/users/:username</td>
+        <td>PUT</td>
+        <td>Updates user info by username.</td>
+        <td>Updated user object</td>
+      </tr>
+      <tr>
+        <td>/users/:username/movies/:movieID</td>
+        <td>POST</td>
+        <td>Adds a movie to a user's list of favorites.</td>
+        <td>Updated user object with favorite movies</td>
+      </tr>
+      <tr>
+        <td>/users/:username/movies/:movieID</td>
+        <td>DELETE</td>
+        <td>Removes a movie from a user's list of favorites.</td>
+        <td>Updated user object with favorite movies</td>
+      </tr>
+      <tr>
+        <td>/users/:username</td>
+        <td>DELETE</td>
+        <td>Deletes a user by username.</td>
+        <td>Deleted user object</td>
+      </tr>
     </tbody>
   </table>
+
+  <h2>Example Responses</h2>
+  <h3>Movie Object</h3>
+  <pre>
+{
+  "title": "Inception",
+  "description": "A thief who steals corporate secrets...",
+  "genre": { "name": "Sci-Fi", "description": "Science Fiction" },
+  "director": { "name": "Christopher Nolan", "bio": "...", "birthYear": 1970 },
+  "featured": true,
+  "imageUrl": "http://example.com/inception.jpg"
+}
+  </pre>
+
+  <h3>Genre Object</h3>
+  <pre>
+{
+  "name": "Sci-Fi",
+  "description": "Science Fiction genre involves futuristic elements..."
+}
+  </pre>
+
+  <h3>Director Object</h3>
+  <pre>
+{
+  "name": "Christopher Nolan",
+  "bio": "British-American film director, producer...",
+  "birthYear": 1970,
+  "deathYear": null
+}
+  </pre>
+
+  <h3>User Object</h3>
+  <pre>
+{
+  "username": "johndoe",
+  "password": "hashedpassword123",
+  "email": "johndoe@example.com",
+  "birthday": "1990-01-01T00:00:00.000Z",
+  "favoriteMovies": ["60c72b2f5f1b2c001cf7c3e8", "60c72b2f5f1b2c001cf7c3e9"]
+}
+  </pre>
 </body>
 </html>
