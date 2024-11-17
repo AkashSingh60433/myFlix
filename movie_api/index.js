@@ -1,10 +1,26 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const { Movie, User } = require('./models'); // Import models from models.js
+const morgan = require('morgan');
+const Models = require('./models.js');
 const app = express();
+const Movies = Models.Movie;
+const Users = Models.User;
 const PORT = process.env.PORT || 8080;
 
-app.use(express.json()); // Middleware to parse JSON requests
+const passport = require('passport');
+require('./passport'); // Ensure Passport strategies are imported
+
+app.use(bodyParser.json()); // Parse JSON requests
+app.use(bodyParser.urlencoded({ extended: true })); // Parse URL-encoded data
+app.use(morgan('common')); // Log HTTP requests
+
+// CORS setup
+const cors = require('cors');
+app.use(cors());
+
+// Import authentication routes
+let auth = require('./auth')(app);
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/MYFLIXDB', { 
@@ -16,7 +32,33 @@ mongoose.connect('mongodb://localhost:27017/MYFLIXDB', {
 
 // Routes
 
-// 1. Get list of all movies
+// 1. Sample protected endpoint (GET /movies)
+app.get(
+  '/movies',
+  passport.authenticate('jwt', { session: false }), // JWT authentication middleware
+  async (req, res) => {
+    try {
+      const movies = await Movies.find();
+      res.status(200).json(movies);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error: ' + error);
+    }
+  }
+);
+
+// 2. Home route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Movie API!');
+});
+
+// 3. Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// 4. Get list of all movies
 app.get('/movies', async (req, res) => {
   try {
     const movies = await Movie.find();
@@ -26,7 +68,7 @@ app.get('/movies', async (req, res) => {
   }
 });
 
-// 2. Get details of a single movie by title
+// 5. Get details of a single movie by title
 app.get('/movies/:title', async (req, res) => {
   try {
     const movie = await Movie.findOne({ title: req.params.title });
@@ -36,7 +78,7 @@ app.get('/movies/:title', async (req, res) => {
   }
 });
 
-// 3. Get details of a genre by name
+// 6. Get details of a genre by name
 app.get('/genres/:name', async (req, res) => {
   try {
     const genre = await Movie.findOne({ 'genre.name': req.params.name }, 'genre');
@@ -46,7 +88,7 @@ app.get('/genres/:name', async (req, res) => {
   }
 });
 
-// 4. Get details of a director by name
+// 7. Get details of a director by name
 app.get('/directors/:name', async (req, res) => {
   try {
     const director = await Movie.findOne({ 'director.name': req.params.name }, 'director');
@@ -56,7 +98,7 @@ app.get('/directors/:name', async (req, res) => {
   }
 });
 
-// 5. Register a new user
+// 8. Register a new user
 app.post('/users', async (req, res) => {
   try {
     const newUser = await User.create({
@@ -71,7 +113,7 @@ app.post('/users', async (req, res) => {
   }
 });
 
-// 6. Update user info by username
+// 9. Update user info by username
 app.put('/users/:username', async (req, res) => {
   try {
     const updatedUser = await User.findOneAndUpdate(
@@ -85,7 +127,7 @@ app.put('/users/:username', async (req, res) => {
   }
 });
 
-// 7. Add a movie to a user's favorites
+// 10. Add a movie to a user's favorites
 app.post('/users/:username/movies/:movieID', async (req, res) => {
   try {
     const updatedUser = await User.findOneAndUpdate(
@@ -99,7 +141,7 @@ app.post('/users/:username/movies/:movieID', async (req, res) => {
   }
 });
 
-// 8. Remove a movie from a user's favorites
+// 11. Remove a movie from a user's favorites
 app.delete('/users/:username/movies/:movieID', async (req, res) => {
   try {
     const updatedUser = await User.findOneAndUpdate(
@@ -113,7 +155,7 @@ app.delete('/users/:username/movies/:movieID', async (req, res) => {
   }
 });
 
-// 9. Deregister a user by username
+// 12. Deregister a user by username
 app.delete('/users/:username', async (req, res) => {
   try {
     const deletedUser = await User.findOneAndRemove({ username: req.params.username });
